@@ -24,15 +24,7 @@
 ---
 
 ## 🎯 **Your Mission:** 🕵️‍♂️🔍  
-🚀 **Management has tasked you with uncovering Indicators of Compromise (IoCs) related to "Jackal Spear."**  
-
-🔎 **Your objectives:**  
-✅ Investigate **system logs** for suspicious activity.  
-✅ Identify any unauthorized **secondary accounts**.  
-✅ Track **attacker movements** and map their **Tactics, Techniques, and Procedures (TTPs)**.  
-✅ **Solve the challenge** by piecing together their attack pattern! 🧩  
-
-💡 **Stay sharp! Every clue brings us closer to shutting down this APT!** 🔐🔥
+🚀 **Management has tasked me with uncovering Indicators of Compromise (IoCs) related to "Jackal Spear."**  
 
 ### High-Level Related IoC Discovery Plan
 
@@ -72,7 +64,20 @@ I kicked off the investigation by searching the **DeviceLogonEvents** table, whi
 ✅ Identify **credential stuffing attempts** 🎭🔑  
 ✅ Uncover **unauthorized access patterns** 🚫💻  
 
-Every login attempt leaves a trace—now it's time to connect the dots! 🧩🔎
+## 🕵️‍♂️ **Refining the Investigation: Login Analysis** 🔍  
+
+### **🔎 Key Investigation Steps:**  
+
+📅 **Time Range:** Expanded to **last 7 days** to capture recent login activity. ⏳📊  
+
+🚫 **Excluding System Accounts:** Removed `"admin"`, `"labuser"`, and `"root"` since they are not typically used by regular users. 🔒⚙️  
+
+📌 **Failed vs. Successful Logins:** Tracked **failed login attempts** and **successful logins** for each account-device combination. 📈👤  
+
+⚠️ **Identifying Suspicious Logins:**  
+✅ Focused on accounts with **5+ failed attempts** followed by **at least one successful login**—a red flag for **brute-force attacks!** 🚨🔑  
+
+🔍 Every login attempt tells a story. Let’s uncover the truth! 🧩🔥
 ---
 ---
 ```kql
@@ -88,23 +93,6 @@ let SuspiciousLogins =
 SuspiciousLogins
 ```
 
-## 🕵️‍♂️ **Refining the Investigation: Login Analysis** 🔍  
-
-### **🔎 Key Investigation Steps:**  
-
-📅 **Time Range:** Expanded to **last 7 days** to capture recent login activity. ⏳📊  
-
-🚫 **Excluding System Accounts:** Removed `"admin"`, `"labuser"`, and `"root"` since they are not typically used by regular users. 🔒⚙️  
-
-📌 **Failed vs. Successful Logins:** Tracked **failed login attempts** and **successful logins** for each account-device combination. 📈👤  
-
-⚠️ **Identifying Suspicious Logins:**  
-✅ Focused on accounts with **5+ failed attempts** followed by **at least one successful login**—a red flag for **brute-force attacks!** 🚨🔑  
-
-🔍 Every login attempt tells a story. Let’s uncover the truth! 🧩🔥
-
-
-
 ![Screenshot 2025-01-30 133603](https://github.com/user-attachments/assets/bbb4f25a-4474-487d-919e-b1a48aee959b)
 
 ---
@@ -113,41 +101,22 @@ SuspiciousLogins
 
 ---
 
-
-## 🔍 **Refining Our Investigation: Login & File Events** 🚨  
-
-### 🕵️ **Step 1: Detecting Suspicious Logins** 🔑  
-
-📅 **Time Range:** Focused on **last 7 days** to capture recent login activity. ⏳🔍  
-🚫 **Excluding System Accounts:** Removed `"admin"`, `"labuser"`, and `"root"` to filter out non-relevant logins. 🔒⚙️  
-📊 **Summarizing Events:** Aggregated login attempts to count both **failed** and **successful** logins. 📈👤  
-⚠️ **Red Flag:** Highlighted accounts with **5+ failed attempts** followed by **at least one successful login**, signaling **brute-force attacks!** 🚨🔐  
-
-### 🧩 **What We Learned:**  
-This query exposed devices with **repeated login failures** leading to **successful logins**, indicating a potential **credential stuffing attack** or bypass attempt. 🔥🕵️‍♂️  
-
----
-
-## 🌍 **Step 2: Identifying Egypt-Based IPs** 🌐  
-
-### **🔎 What We Did:**  
-📡 **IP Cross-Check:** Compared IP addresses in logs against **publicly available Egypt-based IP ranges**. 📍  
-⚠️ **Why It Matters:**  
-- APT groups like **"Jackal Spear"** are known to operate from this region. 🦊💀  
-- Mapping **geolocation** helps confirm the **attack’s origin** and aligns with known TTPs. 🌍  
-
----
-
 ## 📂 **Step 3: Investigating File Events** 🖥️  
 
-### **🔍 What We Did:**  
+### **🔍 What I Did:**  
 🔎 Focused on **file creation, renaming, and modification** activities on the compromised device **"corpnet-1-ny"**.  
 📂 **Target File Types:** `.html`, `.pdf`, `.zip`, `.txt` – likely containing **sensitive data**. 🔓📜  
 
 🚀 **Next Move:**  
-We’ll now analyze **file movement & exfiltration** attempts to determine if critical data was stolen! 🚨💾  
+I’ll now analyze **file movement & exfiltration** attempts to determine if critical data was stolen! 🚨💾   
 
----
+🔎 **Query Results Included:**  
+- `python3.exe` 🐍  
+- `mini-wallet.html` 💳  
+- `wallet-crypto.html` 🏦  
+- `wallet-buynow.html` 🛒  
+- `tokenized-card.html` 🏷️  
+- `wallet.html` 📂 
 
 ```kql
 DeviceFileEvents
@@ -157,27 +126,14 @@ DeviceFileEvents
 | where Timestamp >= datetime(2025-01-29 00:00:00) and Timestamp <= datetime(2025-01-29 23:59:59)  // Restrict to the given date
 | project Timestamp, RequestAccountName, ActionType, FileName, DeviceName  // Select key columns
 | sort by Timestamp desc  // Order by most recent activity
-```
-
-## 🚨 **Challenges in File Investigation** 🔍  
-
-### **📌 What Happened:**  
-I dedicated significant time analyzing **file creation & modification events**, but pinpointing the exact **malicious file** remained difficult. ❌🕵️‍♂️  
-
-🔎 **Query Results Included:**  
-- `python3.exe` 🐍  
-- `mini-wallet.html` 💳  
-- `wallet-crypto.html` 🏦  
-- `wallet-buynow.html` 🛒  
-- `tokenized-card.html` 🏷️  
-- `wallet.html` 📂  
+```  
 
 ![Screenshot 2025-01-30 142420](https://github.com/user-attachments/assets/fce8b0fa-a4e7-490a-a216-aabdf872d784)
 
 ## 🚀 **Step 4: Investigating File Events** 📝🔍  
 
-### **🔎 What We're Doing:**  
-We leveraged **DeviceFileEvents** to monitor **file activities** such as:  
+### **🔎 What I'm Doing:**  
+I leveraged **DeviceFileEvents** to monitor **file activities** such as:  
 📂 **Creation**  
 📝 **Renaming**  
 ✍️ **Modification**  
@@ -211,7 +167,12 @@ DeviceFileEvents
 
 ---
 
-## 🔍 Step 5: Using DeviceEvents for File Access
+## 📂 Step 5: Detailed File Access Information
+
+I retrieved detailed information about the accessed file. The query showed that the files was accessed on the compromised machine.
+
+### **File Access Details:**
+This confirms that the attacker **read this file** during the compromise, which is a significant clue in understanding their movements and intentions. 🔍
 
 ```kusto
 DeviceEvents
@@ -220,23 +181,31 @@ DeviceEvents
 | where ActionType contains "SensitiveFileRead"  // Track sensitive file reads
 ```
 
-- `DeviceName contains "corpnet-1-ny"`: Focused on the compromised device.
-- `ActionType contains "SensitiveFileRead"`: Focused on tracking when **sensitive files** are **accessed** or **read**.
-
 ![Screenshot 2025-01-30 151344](https://github.com/user-attachments/assets/4ce05550-2108-47cb-88ee-bfb54db9c4f8)
-
-### **What We Learned:**
-This query helped us identify when sensitive files were **accessed** or **read** by the attacker. Even if files were not modified, this could indicate **exfiltration** attempts.
 
 ---
 
-## 📂 Step 6: Detailed File Access Information
+### 🎯 **MITRE ATT&CK Framework - "Jackal Spear" Threat Group**  
 
-### **What We're Doing:**
-We retrieved detailed information about the accessed file. The query showed that the file **CRISPR-X_Next-Generation_Gene_Editing_for_Artificial_Evolution.pdf** was accessed on the compromised machine.
-
-### **File Access Details:**
-This confirms that the attacker **read this file** during the compromise, which is a significant clue in understanding their movements and intentions. 🔍
+| **Tactic**              | **Technique**                                                   | **Procedure (Jackal Spear)** |
+|-------------------------|-----------------------------------------------------------------|-----------------------------|
+| **Initial Access**      | [T1078.003] Valid Accounts: Local Accounts                     | Used stolen credentials for direct access. |
+|                         | [T1110.004] Credential Stuffing                                | Attempted multiple stolen credentials until successful authentication. |
+| **Execution**           | [T1059.001] Command and Scripting Interpreter: PowerShell      | Created new local user via PowerShell. |
+| **Persistence**         | [T1136.001] Create Account: Local Account                      | Created secondary user account for persistence. |
+| **Privilege Escalation** | [T1548.002] Abuse Elevation Control Mechanism: Bypass UAC     | Potentially escalated privileges using admin-level execution. |
+| **Defense Evasion**     | [T1070.006] Indicator Removal on Host: Timestomp              | Modified timestamps to evade detection. |
+|                         | [T1027] Obfuscated Files or Information                       | Used encoded PowerShell commands. |
+| **Credential Access**   | [T1555] Credentials from Password Stores                      | Attempted to retrieve credentials from local stores. |
+| **Discovery**           | [T1083] File and Directory Discovery                          | Enumerated files on the compromised machine. |
+|                         | [T1016] System Network Configuration Discovery                | Gathered network information about the compromised environment. |
+| **Lateral Movement**    | [T1570] Lateral Tool Transfer                                 | Moved tools/files between systems. |
+|                         | [T1021.001] Remote Services: Remote Desktop Protocol (RDP)   | Used RDP to pivot across systems. |
+| **Collection**          | [T1560.001] Archive Collected Data: Archive via Utility       | Compressed stolen data for exfiltration. |
+|                         | [T1005] Data from Local System                                | Accessed local files for sensitive data. |
+| **Exfiltration**        | [T1048] Exfiltration Over Alternative Protocol                | Used non-standard channels to exfiltrate data. |
+|                         | [T1567.002] Exfiltration Over Web Service                     | Uploaded stolen data to cloud-based services. |
+| **Impact**              | [T1486] Data Encrypted for Impact                             | Potentially encrypted files before exfiltration. |
 
 ---
 
@@ -259,9 +228,9 @@ This confirms that the attacker **read this file** during the compromise, which 
 
 ### 🚨 **Response Taken**  
 
-✅ **Isolated** `corpnet-1-ny` to halt further data exfiltration.  
+✅ **Isolated** `corpnet-1-ny`, block IPAddress. 
 ✅ **Flagged & Investigated** unauthorized account `chadwick.s`.  
-✅ **Alerted** Create Detection Rules,tell incident response teams about stolen research files.  
-✅ **Preserved** system logs for forensic analysis and evidence collection.  
+✅ **Alerted** Create Detection Rules, Setup MFA, 3 Login attempt before lockout, tell incident response teams about stolen research files.  
+✅ **Preserved** Do a Vulnerability Scan, Malware scan, system logs for forensic analysis and evidence collection.  
 
-🔎 **Next Steps:** Continue monitoring for suspicious activity, strengthen security protocols, and conduct a full forensic audit. 🛡️
+🔎 **Next Steps:** Continue monitoring for suspicious activity, strengthen security protocols, and conduct a full forensic audit and Do a Vulnerability Scan, Malware scan. 🛡️
