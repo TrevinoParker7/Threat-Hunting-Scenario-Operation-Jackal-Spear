@@ -17,27 +17,31 @@ Their primary targets are **executives**. Once they successfully compromise an a
 ## 🎯 Your Mission:
 Management has tasked you with identifying **Indicators of Compromise (IoCs)** related to this South African/Egyptian APT within our systems. If you find any IoCs, conduct a thorough investigation to track the attacker’s movements and piece together their tactics, techniques, and procedures (TTPs) until you’ve “solved the challenge.” 🔍
 
-### High-Level TOR-Related IoC Discovery Plan
+### High-Level Related IoC Discovery Plan
 
-- **Check `DeviceFileEvents`** for any `tor(.exe)` or `firefox(.exe)` file events.
-- **Check `DeviceProcessEvents`** for any signs of installation or usage.
+- **Check `DeviceProcessEvents`** for any New-LocalUser
+- **Check `DeviceLogonEvents`** 
 - **Check `DeviceNetworkEvents`** for any signs of outgoing connections over known TOR ports.
 
 ---
 
 ## Steps Taken
 
-### 1. Searched the `DeviceFileEvents` Table
-
----
-
 ## 💥 Step 1: Investigating Suspicious Logins
 
-### **What We're Doing:**
 We began by looking for **suspicious login activities** by querying the **DeviceLogonEvents** table. These events track successful and failed login attempts on devices. We aimed to detect any **brute-force attacks** or credential stuffing attempts.
-### **The Query:**
 
-### **KQL Code**
+---
+```kql
+DeviceProcessEvents
+| where ProcessCommandLine has_any ("New-LocalUser")
+| project DeviceName, AccountName, ProcessCommandLine
+```
+---
+
+![Screenshot 2025-01-30 182243](https://github.com/user-attachments/assets/2a3368d7-d258-4390-a75a-716a65d2aaa6)
+
+---
 
 ```kql
 let SuspiciousLogins = 
@@ -56,8 +60,6 @@ SuspiciousLogins
 - **Excluding System Accounts**: We excluded **system accounts** such as `"admin"`, `"labuser"`, and `"root"`, since these accounts are typically not used by regular users and may not be relevant to our investigation.
 - **Failed and Successful Logins**: We counted the number of **failed logins** and **successful logins** for each account and device combination.
 - **Filter Suspicious Logins**: We looked for accounts with **more than 5 failed attempts** followed by at least one successful login. This pattern suggests a **brute-force attack**.
-
-### **What it looks like in KQL**
 
 ![Screenshot 2025-01-30 133603](https://github.com/user-attachments/assets/bbb4f25a-4474-487d-919e-b1a48aee959b)
 
@@ -78,7 +80,7 @@ This query helped us identify devices that had frequent **login failures** follo
 
 ---
 
-## 🌍 Step 2: Identifying Egypt-Based IPs
+## 🌍 Step 3: Identifying Egypt-Based IPs
 
 ### **What We're Doing:**
 To identify **Egypt-based IPs**, we cross-referenced the IP addresses found in the logs with **publicly available IP ranges** assigned to Egypt. This is crucial because APT groups like "Jackal Spear" are known to operate from this region.
@@ -89,9 +91,8 @@ By identifying the **location of IPs**, we can better understand the geographica
 ---
 ## 📝 Step 3: Investigating File Events
 
-### **What We're Doing:**
 At this stage, we wanted to investigate **file creation**, **renaming**, and **modification** on the compromised machine **"corpnet-1-ny"**. We specifically looked for relevant files that could have been accessed or modified by the attacker, particularly focusing on file types like `.html`, `.pdf`, `.zip`, and `.txt`.
-### ** KQL Code**
+
 
 ```kql
 DeviceFileEvents
@@ -145,7 +146,6 @@ DeviceFileEvents
 ```
 The query tracked file events on the compromised machine **"corpnet-1-ny"**. We filtered by file extensions (e.g., `.pdf`, `.zip`, `.txt`) to identify relevant files that could contain sensitive data.
 
-### **What it looks like in KQL**
 
 ![Screenshot 2025-01-30 150649](https://github.com/user-attachments/assets/2303e5f7-2bb7-402d-a08b-dc7e59e34e57)
 
@@ -198,71 +198,30 @@ This confirms that the attacker **read this file** during the compromise, which 
 
 ---
 
-- **Timestamp:** `2024-11-08T22:14:48.6065231Z`
-- **Event:** The user "employee" downloaded a file named `tor-browser-windows-x86_64-portable-14.0.1.exe` to the Downloads folder.
-- **Action:** File download detected.
-- **File Path:** `C:\Users\employee\Downloads\tor-browser-windows-x86_64-portable-14.0.1.exe`
-
-### 2. Process Execution - TOR Browser Installation
-
-- **Timestamp:** `2024-11-08T22:16:47.4484567Z`
-- **Event:** The user "employee" executed the file `tor-browser-windows-x86_64-portable-14.0.1.exe` in silent mode, initiating a background installation of the TOR Browser.
-- **Action:** Process creation detected.
-- **Command:** `tor-browser-windows-x86_64-portable-14.0.1.exe /S`
-- **File Path:** `C:\Users\employee\Downloads\tor-browser-windows-x86_64-portable-14.0.1.exe`
-
-### 3. Process Execution - TOR Browser Launch
-
-- **Timestamp:** `2024-11-08T22:17:21.6357935Z`
-- **Event:** User "employee" opened the TOR browser. Subsequent processes associated with TOR browser, such as `firefox.exe` and `tor.exe`, were also created, indicating that the browser launched successfully.
-- **Action:** Process creation of TOR browser-related executables detected.
-- **File Path:** `C:\Users\employee\Desktop\Tor Browser\Browser\TorBrowser\Tor\tor.exe`
-
-### 4. Network Connection - TOR Network
-
-- **Timestamp:** `2024-11-08T22:18:01.1246358Z`
-- **Event:** A network connection to IP `176.198.159.33` on port `9001` by user "employee" was established using `tor.exe`, confirming TOR browser network activity.
-- **Action:** Connection success.
-- **Process:** `tor.exe`
-- **File Path:** `c:\users\employee\desktop\tor browser\browser\torbrowser\tor\tor.exe`
-
-### 5. Additional Network Connections - TOR Browser Activity
-
-- **Timestamps:**
-  - `2024-11-08T22:18:08Z` - Connected to `194.164.169.85` on port `443`.
-  - `2024-11-08T22:18:16Z` - Local connection to `127.0.0.1` on port `9150`.
-- **Event:** Additional TOR network connections were established, indicating ongoing activity by user "employee" through the TOR browser.
-- **Action:** Multiple successful connections detected.
-
-### 6. File Creation - TOR Shopping List
-
-- **Timestamp:** `2024-11-08T22:27:19.7259964Z`
-- **Event:** The user "employee" created a file named `tor-shopping-list.txt` on the desktop, potentially indicating a list or notes related to their TOR browser activities.
-- **Action:** File creation detected.
-- **File Path:** `C:\Users\employee\Desktop\tor-shopping-list.txt`
-
----
-
-## Summary
-
-The user "employee" on the "threat-hunt-lab" device initiated and completed the installation of the TOR browser. They proceeded to launch the browser, establish connections within the TOR network, and created various files related to TOR on their desktop, including a file named `tor-shopping-list.txt`. This sequence of activities indicates that the user actively installed, configured, and used the TOR browser, likely for anonymous browsing purposes, with possible documentation in the form of the "shopping list" file.
-
----
-
 ## ✅ Conclusion
 
-By initially investigating **suspicious login attempts** using the **DeviceLogonEvents** query, and then adjusting our approach to track **file access events** using **DeviceEvents**, we successfully identified the **compromised machine** and the **sensitive file accessed** during the attack. 
+### 🔍 **Summary of Findings**  
 
-This allowed us to trace the **attacker's movements** and better understand their **tactics, techniques, and procedures (TTPs)**. We now have a clearer picture of the attack and the data exfiltrated during the compromise. 🚨
+🔴 **Compromised Device:** `corpnet-1-ny`  
+🌍 **Attacker's Public IP Address:** `102.37.140.95`  
+🔐 **Failed Login Attempts:** `14`  
+👤 **Unauthorized Account Created:** `chadwick.s`  
+
+📂 **Stolen Files:**  
+📁 `gene_editing_papers.zip`  
+📄 `"CRISPR-X: Next-Generation Gene Editing for Artificial Evolution.pdf"`  
+📄 `"Genetic Drift in Hyper-Evolving Species: A Case Study.pdf"`  
+📄 `"Mutagenic Pathways and Cellular Adaptation.pdf"`  
+📄 `"Mutational Therapy: Theoretical Applications in Human Enhancement.pdf"`  
+📄 `"Spontaneous Mutations in Simulated Microbial Ecosystems.pdf"`  
 
 ---
 
-## Response Taken
+### 🚨 **Response Taken**  
 
-Brute force was confirmed on the endpoint `corpnet-1-ny` by the user `chadwicks and chadwick.s`. The device was isolated, IPAddress block, created a rule to detected if it happens again and manager was notified.
+✅ **Isolated** `corpnet-1-ny` to halt further data exfiltration.  
+✅ **Flagged & Investigated** unauthorized account `chadwick.s`.  
+✅ **Alerted** incident response teams about stolen research files.  
+✅ **Preserved** Create A Rule for detection,system logs for forensic analysis and evidence collection.  
 
----
-
-### ⚠️ Always Stay Alert! ✨
-
-Remember, detecting and mitigating attacks like these requires constant vigilance and quick action. Stay secure! 🔐
+🔎 **Next Steps:** Continue monitoring for suspicious activity, strengthen security protocols, and conduct a full forensic audit. 🛡️
