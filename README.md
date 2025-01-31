@@ -228,7 +228,7 @@ DeviceEvents
 
 ### 🚨 **Response Taken**  
 
-✅ **Isolated** `corpnet-1-ny`, block IPAddress. 
+✅ **Isolated** `corpnet-1-ny`, block IPAddress. </br>
 ✅ **Flagged & Investigated** unauthorized account `chadwick.s`.  
 ✅ **Alerted** Create Detection Rules, Setup MFA, 3 Login attempt before lockout, tell incident response teams about stolen research files.  
 ✅ **Preserved** Do a Vulnerability Scan, Malware scan, system logs for forensic analysis and evidence collection.  
